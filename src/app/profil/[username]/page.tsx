@@ -26,7 +26,8 @@ export default async function ProfilPage({ params }: Props) {
     canView = !!ami
   }
 
-  let concerts: ReturnType<typeof Array>[] = []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let concerts: any[] = []
   let stats = { total: 0, artistes: 0, avgNote: null as string | null }
 
   if (canView) {
@@ -43,12 +44,12 @@ export default async function ProfilPage({ params }: Props) {
       user_has_liked: currentUser ? c.reactions?.some((r: { user_id: string }) => r.user_id === currentUser.id) : false,
     }))
 
-    const artistesSet = new Set(concerts.map((c: { artiste: string }) => c.artiste))
-    const notes = concerts.filter((c: { note: number | null }) => c.note !== null).map((c: { note: number }) => c.note)
+    const artistesSet = new Set(concerts.map(c => c.artiste as string))
+    const notes = concerts.filter(c => c.note !== null).map(c => c.note as number)
     stats = {
       total: concerts.length,
       artistes: artistesSet.size,
-      avgNote: notes.length > 0 ? (notes.reduce((s: number, n: number) => s + n, 0) / notes.length).toFixed(1) : null
+      avgNote: notes.length > 0 ? (notes.reduce((s, n) => s + n, 0) / notes.length).toFixed(1) : null
     }
   }
 
