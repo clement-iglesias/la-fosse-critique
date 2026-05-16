@@ -49,7 +49,7 @@ export default async function ConcertsPage() {
         ) : (
           <div className="space-y-3">
             {vus.map(concert => (
-              <ConcertCard key={concert.id} concert={concert} />
+              <ConcertCard key={concert.id} concert={concert} userId={user.id} />
             ))}
           </div>
         )}
