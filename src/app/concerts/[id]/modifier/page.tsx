@@ -15,6 +15,8 @@ export default function ModifierConcertPage() {
   const supabase = createClient()
 
   const [loading, setLoading] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [fetching, setFetching] = useState(true)
   const [error, setError] = useState('')
   const [moments, setMoments] = useState<string[]>([''])
@@ -121,6 +123,23 @@ export default function ModifierConcertPage() {
       setError(msg)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    setDeleting(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { error: delError } = await supabase.from('concerts').delete().eq('id', id).eq('user_id', user.id)
+      if (delError) throw delError
+      router.push('/dashboard')
+      router.refresh()
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : (err as { message?: string })?.message ?? 'Erreur lors de la suppression.'
+      setError(msg)
+      setDeleting(false)
+      setConfirmDelete(false)
     }
   }
 
@@ -350,6 +369,42 @@ export default function ModifierConcertPage() {
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               Mettre à jour
             </button>
+          </div>
+
+          {/* Suppression */}
+          <div className="pt-2 border-t border-fosse-border mt-4">
+            {!confirmDelete ? (
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(true)}
+                className="w-full py-2.5 rounded-xl text-sm text-red-400/60 hover:text-red-400 hover:bg-red-400/5 border border-transparent hover:border-red-400/20 transition-all"
+              >
+                Supprimer ce concert
+              </button>
+            ) : (
+              <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4 space-y-3">
+                <p className="text-sm text-red-400 text-center font-medium">Supprimer définitivement ce concert ?</p>
+                <p className="text-xs text-fosse-muted text-center">Cette action est irréversible.</p>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDelete(false)}
+                    className="flex-1 py-2 rounded-lg text-sm border border-fosse-border text-fosse-muted hover:text-fosse-text transition-colors"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="flex-1 py-2 rounded-lg text-sm font-semibold bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors flex items-center justify-center gap-2"
+                  >
+                    {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                    Oui, supprimer
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </form>
       </div>
