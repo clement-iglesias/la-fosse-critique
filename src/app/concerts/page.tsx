@@ -54,3 +54,9 @@ export default async function ConcertsPage() {
           </div>
         )}
       </main>
+    </div>
+  )
+}
+    </div>
+  )
+}
