@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { GENRES_MUSICAUX, HUMEURS_AVANT, HUMEURS_APRES, PLACEMENTS } from '@/lib/types'
 import { Save, ArrowLeft, Loader2, Music, Calendar, MapPin, Star, FileText, Clock, Users, Plus, X } from 'lucide-react'
+import SetlistSearch from '@/components/concerts/SetlistSearch'
 
 export default function NouveauConcertPage() {
   const router = useRouter()
@@ -15,6 +16,7 @@ export default function NouveauConcertPage() {
   const [username, setUsername] = useState('')
   const [moments, setMoments] = useState<string[]>([''])
 
+  const [setlistfmId, setSetlistfmId] = useState('')
   const [form, setForm] = useState({
     artiste: '', date_concert: '', salle: '', ville: '', pays: 'France',
     genre: '', note: '', commentaire: '', journal: '', setlist: '',
@@ -75,6 +77,7 @@ export default function NouveauConcertPage() {
         moments_cles: momentsArr,
         setlist: setlistArr,
         statut: form.statut,
+        setlistfm_id: setlistfmId || null,
       })
 
       if (insertError) throw insertError
@@ -277,9 +280,18 @@ export default function NouveauConcertPage() {
 
               {/* ── SETLIST ── */}
               <SectionTitle icon={Music} label="Setlist" />
+              <SetlistSearch
+                artist={form.artiste}
+                date={form.date_concert}
+                venue={form.salle}
+                onImport={(songs, id) => {
+                  setForm(prev => ({ ...prev, setlist: songs.join('\n') }))
+                  setSetlistfmId(id)
+                }}
+              />
               <textarea name="setlist" value={form.setlist} onChange={handleChange} rows={5}
                 placeholder={"Enter Sandman\nNothing Else Matters\nMaster of Puppets\n..."}
-                className="input-field resize-none font-mono text-sm" />
+                className="input-field resize-none font-mono text-sm mt-2" />
             </>
           )}
 
