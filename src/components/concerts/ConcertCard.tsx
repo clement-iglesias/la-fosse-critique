@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Concert, GENRE_COLORS } from '@/lib/types'
-import { Calendar, MapPin, Users, MessageCircle, Share2, Sparkles, ChevronDown, ChevronUp, Pencil } from 'lucide-react'
+import { Calendar, MapPin, Users, MessageCircle, Share2, Sparkles, ChevronDown, ChevronUp, Pencil, Music } from 'lucide-react'
 import Link from 'next/link'
 import LikeButton from './LikeButton'
 import CommentSheet from './CommentSheet'
@@ -36,6 +36,7 @@ export default function ConcertCard({ concert, userId, onDelete }: ConcertCardPr
   const [showComments, setShowComments] = useState(false)
   const [showStory, setShowStory] = useState(false)
   const [expanded, setExpanded] = useState(false)
+  const [showSetlist, setShowSetlist] = useState(false)
   const isAVenir = concert.statut === 'a_venir'
 
   const genreStyle = GENRE_COLORS[concert.genre ?? ''] ?? GENRE_COLORS['default']
@@ -157,6 +158,30 @@ export default function ConcertCard({ concert, userId, onDelete }: ConcertCardPr
               {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
               {expanded ? 'Réduire' : `Voir ${hasMoments ? concert.moments_cles.length + ' moment(s) · ' : ''}plus`}
             </button>
+          )}
+
+          {/* Setlist */}
+          {concert.setlist?.length > 0 && (
+            <div className="mb-3">
+              <button
+                onClick={() => setShowSetlist(!showSetlist)}
+                className="flex items-center gap-1.5 text-[10px] text-[#333] hover:text-fosse-muted transition-colors"
+              >
+                <Music className="w-3 h-3" />
+                {showSetlist ? 'Masquer la setlist' : `Setlist · ${concert.setlist.length} titres`}
+                {showSetlist ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </button>
+              {showSetlist && (
+                <ol className="mt-2 space-y-1 pl-1">
+                  {concert.setlist.map((titre, i) => (
+                    <li key={i} className="flex items-baseline gap-2 text-xs text-[#555]">
+                      <span className="text-[#333] tabular-nums w-5 shrink-0 text-right">{i + 1}.</span>
+                      <span>{titre}</span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
           )}
         </div>
 
