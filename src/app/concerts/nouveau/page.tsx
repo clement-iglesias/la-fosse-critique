@@ -102,7 +102,6 @@ export default function NouveauConcertPage() {
   return (
     <div className="min-h-screen bg-fosse-bg">
       <div className="max-w-2xl mx-auto px-4 pt-6 pb-24">
-        {/* Header */}
         <div className="flex items-center gap-3 mb-8">
           <Link href="/dashboard" className="btn-ghost p-2">
             <ArrowLeft className="w-5 h-5" />
@@ -114,7 +113,6 @@ export default function NouveauConcertPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Statut */}
           <div className="flex gap-3">
             {[
               { value: 'vu', label: 'Concert vu', icon: Music },
@@ -132,7 +130,6 @@ export default function NouveauConcertPage() {
             ))}
           </div>
 
-          {/* ── INFOS DE BASE ── */}
           <div>
             <label className="block text-sm font-medium mb-1.5 text-fosse-muted">Artiste / Groupe *</label>
             <input name="artiste" type="text" value={form.artiste} onChange={handleChange}
@@ -177,7 +174,6 @@ export default function NouveauConcertPage() {
               placeholder="Sophie, Marc… ou solo !" className="input-field" />
           </div>
 
-          {/* ── OÙ ÉTAIS-TU ── */}
           {isVu && (
             <>
               <SectionTitle icon={MapPin} label="Où étais-tu ?" />
@@ -196,7 +192,6 @@ export default function NouveauConcertPage() {
                 ))}
               </div>
 
-              {/* ── HUMEURS ── */}
               <SectionTitle icon={Star} label="Comment tu te sentais ?" />
               <div>
                 <label className="block text-sm font-medium mb-2 text-fosse-muted">Avant le concert</label>
@@ -233,7 +228,6 @@ export default function NouveauConcertPage() {
                 </div>
               </div>
 
-              {/* ── NOTE ── */}
               <SectionTitle icon={Star} label="Note" />
               <div className="flex items-center gap-4">
                 <input name="note" type="number" min="0" max="20" step="0.5"
@@ -246,13 +240,11 @@ export default function NouveauConcertPage() {
                 )}
               </div>
 
-              {/* ── JOURNAL ── */}
               <SectionTitle icon={FileText} label="Journal — ta soirée en mots" />
               <textarea name="journal" value={form.journal} onChange={handleChange} rows={6}
-                placeholder={`Raconte ta soirée comme si tu l'écrivais pour ton futur toi...\n\nL'ambiance, les lumières, ce moment précis qui t'a traversé, les frissons, la foule...`}
+                placeholder="Raconte ta soirée comme si tu l'écrivais pour ton futur toi..."
                 className="input-field resize-none leading-relaxed" />
 
-              {/* ── MOMENTS CLÉS ── */}
               <SectionTitle icon={Star} label="Moments clés" />
               <p className="text-xs text-fosse-muted -mt-2">Ces petites anecdotes que tu ne veux pas oublier</p>
               <div className="space-y-2">
@@ -278,7 +270,6 @@ export default function NouveauConcertPage() {
                 )}
               </div>
 
-              {/* ── SETLIST ── */}
               <SectionTitle icon={Music} label="Setlist" />
               <SetlistSearch
                 artist={form.artiste}
@@ -290,7 +281,7 @@ export default function NouveauConcertPage() {
                 }}
               />
               <textarea name="setlist" value={form.setlist} onChange={handleChange} rows={5}
-                placeholder={"Enter Sandman\nNothing Else Matters\nMaster of Puppets\n..."}
+                placeholder="Enter Sandman&#10;Nothing Else Matters&#10;Master of Puppets&#10;..."
                 className="input-field resize-none font-mono text-sm mt-2" />
             </>
           )}
@@ -301,4 +292,16 @@ export default function NouveauConcertPage() {
             </div>
           )}
 
- 
+          <div className="flex gap-3 pt-4">
+            <Link href="/dashboard" className="btn-secondary flex-1 text-center py-3">Annuler</Link>
+            <button type="submit" disabled={loading}
+              className="btn-primary flex-1 flex items-center justify-center gap-2 py-3">
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              Enregistrer
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}

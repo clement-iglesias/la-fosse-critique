@@ -55,14 +55,12 @@ export default function ConcertCard({ concert, userId, onDelete }: ConcertCardPr
       }`}>
         {/* Hero */}
         <div className="relative h-20 overflow-hidden flex items-end px-4 pb-3 bg-fosse-surface">
-          {/* Artiste en filigrane */}
           <div className="absolute inset-0 flex items-center justify-start pl-4 overflow-hidden select-none pointer-events-none">
             <span className="text-6xl font-black text-white/[0.04] whitespace-nowrap tracking-tight uppercase">
               {concert.artiste}
             </span>
           </div>
 
-          {/* Genre badge */}
           {concert.genre && (
             <div
               className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase"
@@ -72,7 +70,6 @@ export default function ConcertCard({ concert, userId, onDelete }: ConcertCardPr
             </div>
           )}
 
-          {/* Statut à venir */}
           {isAVenir && (
             <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold bg-fosse-amber/10 text-fosse-amber border border-fosse-amber/25">
               J&apos;y serai
@@ -87,7 +84,6 @@ export default function ConcertCard({ concert, userId, onDelete }: ConcertCardPr
 
         {/* Body */}
         <div className="px-4 pt-3 pb-0">
-          {/* Méta */}
           <div className="flex flex-wrap gap-3 text-xs text-fosse-muted mb-2.5">
             <span className="flex items-center gap-1">
               <Calendar className="w-3 h-3" />{formatDate(concert.date_concert)}
@@ -108,7 +104,6 @@ export default function ConcertCard({ concert, userId, onDelete }: ConcertCardPr
             )}
           </div>
 
-          {/* Humeurs */}
           {(concert.humeur_avant || concert.humeur_apres) && (
             <div className="flex items-center gap-2 mb-3">
               {concert.humeur_avant && (
@@ -127,7 +122,6 @@ export default function ConcertCard({ concert, userId, onDelete }: ConcertCardPr
             </div>
           )}
 
-          {/* Journal */}
           {hasJournal && (
             <div className="relative mb-3 px-3 py-2.5 bg-fosse-surface rounded-xl border-l-2 border-fosse-orange/30">
               <span className="absolute top-0 left-2 text-3xl text-fosse-orange/20 font-black leading-none select-none">&ldquo;</span>
@@ -137,7 +131,6 @@ export default function ConcertCard({ concert, userId, onDelete }: ConcertCardPr
             </div>
           )}
 
-          {/* Moments clés */}
           {hasMoments && expanded && (
             <div className="mb-3 space-y-1.5">
               {concert.moments_cles.map((m, i) => (
@@ -149,7 +142,6 @@ export default function ConcertCard({ concert, userId, onDelete }: ConcertCardPr
             </div>
           )}
 
-          {/* Bouton développer */}
           {hasExtras && (
             <button
               onClick={() => setExpanded(!expanded)}
@@ -160,7 +152,6 @@ export default function ConcertCard({ concert, userId, onDelete }: ConcertCardPr
             </button>
           )}
 
-          {/* Setlist */}
           {concert.setlist?.length > 0 && (
             <div className="mb-3">
               <button
@@ -187,7 +178,6 @@ export default function ConcertCard({ concert, userId, onDelete }: ConcertCardPr
 
         {/* Barre d'actions */}
         <div className="flex items-center border-t border-fosse-surface px-2 py-1">
-          {/* Like */}
           <LikeButton
             concertId={concert.id}
             initialCount={nbLikes}
@@ -195,7 +185,6 @@ export default function ConcertCard({ concert, userId, onDelete }: ConcertCardPr
             userId={userId}
           />
 
-          {/* Commentaires */}
           <button
             onClick={() => setShowComments(true)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-fosse-muted hover:text-fosse-text hover:bg-fosse-card transition-all"
@@ -204,7 +193,6 @@ export default function ConcertCard({ concert, userId, onDelete }: ConcertCardPr
             <span>{nbComments}</span>
           </button>
 
-          {/* Partager */}
           <button
             onClick={() => {
               if (navigator.share) {
@@ -218,4 +206,49 @@ export default function ConcertCard({ concert, userId, onDelete }: ConcertCardPr
             <Share2 className="w-4 h-4" />
           </button>
 
-          {
+          <div className="flex-1" />
+
+          {!isAVenir && (
+            <button
+              onClick={() => setShowStory(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold bg-fosse-orange text-white hover:bg-fosse-orange-dim transition-all"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              Story
+            </button>
+          )}
+
+          {userId === concert.user_id && (
+            <Link
+              href={`/concerts/${concert.id}/modifier`}
+              className="ml-1 px-2 py-2 rounded-lg text-fosse-border hover:text-fosse-orange hover:bg-fosse-orange/10 transition-all"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </Link>
+          )}
+
+          {onDelete && (
+            <button
+              onClick={() => onDelete(concert.id)}
+              className="ml-1 px-2 py-2 rounded-lg text-xs text-fosse-border hover:text-red-400 hover:bg-red-400/10 transition-all"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      </article>
+
+      {showComments && (
+        <CommentSheet
+          concertId={concert.id}
+          concertLabel={`${concert.artiste} · ${formatDate(concert.date_concert)}`}
+          userId={userId}
+          onClose={() => setShowComments(false)}
+        />
+      )}
+      {showStory && (
+        <StoryGenerator concert={concert} onClose={() => setShowStory(false)} />
+      )}
+    </>
+  )
+}
