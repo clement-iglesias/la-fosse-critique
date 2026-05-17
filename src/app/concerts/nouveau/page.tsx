@@ -301,16 +301,4 @@ export default function NouveauConcertPage() {
             </div>
           )}
 
-          <div className="flex gap-3 pt-4">
-            <Link href="/dashboard" className="btn-secondary flex-1 text-center py-3">Annuler</Link>
-            <button type="submit" disabled={loading}
-              className="btn-primary flex-1 flex items-center justify-center gap-2 py-3">
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Enregistrer
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
-}
+ 

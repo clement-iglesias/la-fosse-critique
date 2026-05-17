@@ -276,10 +276,4 @@ function AuthContent() {
   )
 }
 
-export default function AuthPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-fosse-bg" />}>
-      <AuthContent />
-    </Suspense>
-  )
-}
+e
