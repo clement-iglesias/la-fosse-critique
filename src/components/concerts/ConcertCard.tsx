@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { Concert, GENRE_COLORS } from '@/lib/types'
-import { Calendar, MapPin, Users, MessageCircle, Share2, Sparkles, ChevronDown, ChevronUp } from 'lucide-react'
+import { Calendar, MapPin, Users, MessageCircle, Share2, Sparkles, ChevronDown, ChevronUp, Pencil } from 'lucide-react'
+import Link from 'next/link'
 import LikeButton from './LikeButton'
 import CommentSheet from './CommentSheet'
 import StoryGenerator from './StoryGenerator'
@@ -204,6 +205,16 @@ export default function ConcertCard({ concert, userId, onDelete }: ConcertCardPr
               <Sparkles className="w-3.5 h-3.5" />
               Story
             </button>
+          )}
+
+          {/* Modifier (propriétaire) */}
+          {userId === concert.user_id && (
+            <Link
+              href={`/concerts/${concert.id}/modifier`}
+              className="ml-1 px-2 py-2 rounded-lg text-fosse-border hover:text-fosse-orange hover:bg-fosse-orange/10 transition-all"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </Link>
           )}
 
           {/* Supprimer (propriétaire) */}
