@@ -40,7 +40,7 @@ export default async function DashboardPage() {
     acc[c.artiste] = (acc[c.artiste] || 0) + 1
     return acc
   }, {} as Record<string, number>)
-  const topArtiste = Object.entries(artisteCounts).sort((a, b) => b[1] - a[1])[0] ?? null
+  const topArtiste = (Object.entries(artisteCounts) as [string, number][]).sort((a, b) => b[1] - a[1])[0] ?? null
 
   return (
     <div className="min-h-screen bg-fosse-bg">
