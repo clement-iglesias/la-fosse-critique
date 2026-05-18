@@ -36,6 +36,12 @@ export default async function DashboardPage() {
     ? (notes.reduce((s, n) => s + n, 0) / notes.length).toFixed(1)
     : null
 
+  const artisteCounts = vus.reduce((acc, c) => {
+    acc[c.artiste] = (acc[c.artiste] || 0) + 1
+    return acc
+  }, {} as Record<string, number>)
+  const topArtiste = Object.entries(artisteCounts).sort((a, b) => b[1] - a[1])[0] ?? null
+
   return (
     <div className="min-h-screen bg-fosse-bg">
       {/* Top bar */}
@@ -72,20 +78,34 @@ export default async function DashboardPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-2 mb-6">
+        <div className="grid grid-cols-4 gap-2 mb-3">
           {[
             { icon: Music, label: 'Concerts', value: totalConcerts },
             { icon: Users, label: 'Artistes', value: artistesUniques },
             { icon: Star, label: 'Note moy.', value: avgNote ? `${avgNote}` : '—' },
             { icon: Calendar, label: 'À venir', value: aVenir.length },
           ].map(({ icon: Icon, label, value }) => (
-            <div key={label} className="bg-[#0e0e0e] border border-[#1a1a1a] rounded-2xl p-3 text-center">
+            <div key={label} className="bg-fosse-surface border border-fosse-card rounded-2xl p-3 text-center">
               <Icon className="w-4 h-4 text-fosse-orange mx-auto mb-1.5" />
               <div className="text-lg font-black text-white leading-none">{value}</div>
               <div className="text-[9px] text-fosse-border mt-1 uppercase tracking-wider font-semibold">{label}</div>
             </div>
           ))}
         </div>
+
+        {/* Top artiste */}
+        {topArtiste && (
+          <div className="flex items-center gap-3 bg-fosse-surface border border-fosse-card rounded-2xl px-4 py-3 mb-6">
+            <Mic2 className="w-4 h-4 text-fosse-orange shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="text-[9px] text-fosse-border uppercase tracking-wider font-semibold mb-0.5">Artiste vu le plus souvent</div>
+              <div className="text-sm font-black text-white truncate">{topArtiste[0]}</div>
+            </div>
+            <div className="text-fosse-orange font-black text-sm shrink-0">
+              ×{topArtiste[1]}
+            </div>
+          </div>
+        )}
 
         {/* À venir */}
         {aVenir.length > 0 && (
@@ -110,7 +130,7 @@ export default async function DashboardPage() {
           </div>
 
           {vus.length === 0 ? (
-            <div className="bg-[#0e0e0e] border border-dashed border-[#1e1e1e] rounded-2xl p-12 text-center">
+            <div className="bg-fosse-surface border border-dashed border-fosse-card rounded-2xl p-12 text-center">
               <Music className="w-10 h-10 text-fosse-border mx-auto mb-3" />
               <p className="text-fosse-muted mb-4 text-sm">Ton journal est vide.</p>
               <Link href="/concerts/nouveau" className="btn-primary">
