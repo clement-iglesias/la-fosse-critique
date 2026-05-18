@@ -52,7 +52,7 @@ export default function RechercheAmisPage() {
       receveur_id: targetId,
       statut: 'en_attente',
     })
-    setSent(prev => new Set([...prev, targetId]))
+    setSent(prev => { const s = new Set(prev); s.add(targetId); return s })
   }
 
   return (
