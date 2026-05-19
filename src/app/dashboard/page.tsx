@@ -18,7 +18,6 @@ export default async function DashboardPage() {
     .select('*, reactions(id, user_id)')
     .eq('user_id', user.id)
     .order('date_concert', { ascending: false })
-    .limit(20)
 
   const processedConcerts = (concerts ?? []).map(c => ({
     ...c,
