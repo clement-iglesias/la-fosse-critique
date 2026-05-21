@@ -39,7 +39,11 @@ export default function ConcertCard({ concert, userId, onDelete }: ConcertCardPr
   const [showSetlist, setShowSetlist] = useState(false)
   const isAVenir = concert.statut === 'a_venir'
 
-  const genreStyle = GENRE_COLORS[concert.genre ?? ''] ?? GENRE_COLORS['default']
+  // Support both new genres[] and legacy genre field
+  const displayGenres: string[] = (Array.isArray(concert.genres) && concert.genres.length > 0)
+    ? concert.genres
+    : (concert.genre ? [concert.genre] : [])
+
   const hasJournal = !!concert.journal
   const hasMoments = concert.moments_cles?.length > 0
   const hasExtras = hasJournal || hasMoments || concert.avec_qui || concert.placement
@@ -61,12 +65,26 @@ export default function ConcertCard({ concert, userId, onDelete }: ConcertCardPr
             </span>
           </div>
 
-          {concert.genre && (
-            <div
-              className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase"
-              style={{ background: genreStyle.bg, color: genreStyle.text, border: `1px solid ${genreStyle.border}` }}
-            >
-              {concert.genre}
+          {/* Genre tags */}
+          {displayGenres.length > 0 && (
+            <div className="absolute top-3 right-3 flex gap-1 flex-wrap justify-end max-w-[60%]">
+              {displayGenres.slice(0, 2).map(g => {
+                const gs = GENRE_COLORS[g] ?? GENRE_COLORS['default']
+                return (
+                  <span
+                    key={g}
+                    className="px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wider uppercase"
+                    style={{ background: gs.bg, color: gs.text, border: `1px solid ${gs.border}` }}
+                  >
+                    {g}
+                  </span>
+                )
+              })}
+              {displayGenres.length > 2 && (
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-fosse-card border border-fosse-border text-fosse-muted">
+                  +{displayGenres.length - 2}
+                </span>
+              )}
             </div>
           )}
 
@@ -176,7 +194,7 @@ export default function ConcertCard({ concert, userId, onDelete }: ConcertCardPr
           )}
         </div>
 
-        {/* Barre d'actions */}
+        {/* Actions bar */}
         <div className="flex items-center border-t border-fosse-surface px-2 py-1">
           <LikeButton
             concertId={concert.id}

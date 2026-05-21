@@ -4,9 +4,12 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { GENRES_MUSICAUX, HUMEURS_AVANT, HUMEURS_APRES, PLACEMENTS } from '@/lib/types'
-import { Save, ArrowLeft, Loader2, Music, Calendar, MapPin, Star, FileText, Clock, Users, Plus, X } from 'lucide-react'
+import { HUMEURS_AVANT, HUMEURS_APRES, PLACEMENTS } from '@/lib/types'
+import { Save, ArrowLeft, Loader2, Music, MapPin, Star, FileText, Clock, Users, Plus, X, Trash2 } from 'lucide-react'
 import SetlistSearch from '@/components/concerts/SetlistSearch'
+import DatePicker from '@/components/ui/DatePicker'
+import FriendsTagger from '@/components/concerts/FriendsTagger'
+import GenrePicker from '@/components/concerts/GenrePicker'
 
 export default function ModifierConcertPage() {
   const router = useRouter()
@@ -22,10 +25,13 @@ export default function ModifierConcertPage() {
   const [moments, setMoments] = useState<string[]>([''])
   const [setlistfmId, setSetlistfmId] = useState('')
 
+  const [genres, setGenres] = useState<string[]>([])
+  const [avecQui, setAvecQui] = useState<string[]>([])
+
   const [form, setForm] = useState({
     artiste: '', date_concert: '', salle: '', ville: '', pays: 'France',
-    genre: '', note: '', commentaire: '', journal: '', setlist: '',
-    humeur_avant: '', humeur_apres: '', avec_qui: '', placement: '',
+    note: '', journal: '', setlist: '',
+    humeur_avant: '', humeur_apres: '', placement: '',
     statut: 'vu' as 'vu' | 'a_venir',
   })
 
@@ -49,18 +55,29 @@ export default function ModifierConcertPage() {
         salle: data.salle ?? '',
         ville: data.ville ?? '',
         pays: data.pays ?? 'France',
-        genre: data.genre ?? '',
         note: data.note !== null ? String(data.note) : '',
-        commentaire: data.commentaire ?? '',
         journal: data.journal ?? '',
         setlist: Array.isArray(data.setlist) ? data.setlist.join('\n') : '',
         humeur_avant: data.humeur_avant ?? '',
         humeur_apres: data.humeur_apres ?? '',
-        avec_qui: data.avec_qui ?? '',
         placement: data.placement ?? '',
         statut: data.statut ?? 'vu',
       })
+
+      // Load genres (new field or fall back to old single genre)
+      if (Array.isArray(data.genres) && data.genres.length > 0) {
+        setGenres(data.genres)
+      } else if (data.genre) {
+        setGenres([data.genre])
+      }
+
+      // Load avec_qui as array (split comma-separated string)
+      if (data.avec_qui) {
+        setAvecQui(data.avec_qui.split(',').map((s: string) => s.trim()).filter(Boolean))
+      }
+
       setMoments(Array.isArray(data.moments_cles) && data.moments_cles.length > 0 ? data.moments_cles : [''])
+      setSetlistfmId(data.setlistfm_id ?? '')
       setFetching(false)
     }
     fetchConcert()
@@ -101,12 +118,13 @@ export default function ModifierConcertPage() {
         salle: form.salle.trim() || null,
         ville: form.ville.trim() || null,
         pays: form.pays,
-        genre: form.genre || null,
+        genre: genres[0] || null,
+        genres: genres,
         note: noteNum,
         journal: form.journal.trim() || null,
         humeur_avant: form.humeur_avant || null,
         humeur_apres: form.humeur_apres || null,
-        avec_qui: form.avec_qui.trim() || null,
+        avec_qui: avecQui.length > 0 ? avecQui.join(', ') : null,
         placement: form.placement || null,
         moments_cles: momentsArr,
         setlist: setlistArr,
@@ -163,7 +181,6 @@ export default function ModifierConcertPage() {
   return (
     <div className="min-h-screen bg-fosse-bg">
       <div className="max-w-2xl mx-auto px-4 pt-6 pb-24">
-        {/* Header */}
         <div className="flex items-center gap-3 mb-8">
           <Link href="/dashboard" className="btn-ghost p-2">
             <ArrowLeft className="w-5 h-5" />
@@ -200,29 +217,14 @@ export default function ModifierConcertPage() {
               placeholder="ex : Metallica" className="input-field" required />
           </div>
 
+          {/* Date + Ville */}
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium mb-1.5 text-fosse-muted">Date *</label>
-              <input name="date_concert" type="date" value={form.date_concert} onChange={handleChange}
-                className="input-field" required />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1.5 text-fosse-muted">Genre</label>
-              <select name="genre" value={form.genre} onChange={handleChange} className="input-field">
-                <option value="">Sélectionner</option>
-                {GENRES_MUSICAUX.map(g => <option key={g} value={g}>{g}</option>)}
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium mb-1.5 text-fosse-muted">
-                <MapPin className="w-3.5 h-3.5 inline mr-1" />Salle
-              </label>
-              <input name="salle" type="text" value={form.salle} onChange={handleChange}
-                placeholder="Zénith de Paris" className="input-field" />
-            </div>
+            <DatePicker
+              label="Date *"
+              value={form.date_concert}
+              onChange={date => { setForm(prev => ({ ...prev, date_concert: date })); setError('') }}
+              required
+            />
             <div>
               <label className="block text-sm font-medium mb-1.5 text-fosse-muted">Ville</label>
               <input name="ville" type="text" value={form.ville} onChange={handleChange}
@@ -230,15 +232,29 @@ export default function ModifierConcertPage() {
             </div>
           </div>
 
+          {/* Salle */}
           <div>
             <label className="block text-sm font-medium mb-1.5 text-fosse-muted">
-              <Users className="w-3.5 h-3.5 inline mr-1" />Avec qui ?
+              <MapPin className="w-3.5 h-3.5 inline mr-1" />Salle
             </label>
-            <input name="avec_qui" type="text" value={form.avec_qui} onChange={handleChange}
-              placeholder="Sophie, Marc… ou solo !" className="input-field" />
+            <input name="salle" type="text" value={form.salle} onChange={handleChange}
+              placeholder="Zénith de Paris" className="input-field" />
           </div>
 
-          {/* Placement */}
+          {/* Genre */}
+          <div>
+            <label className="block text-sm font-medium mb-2 text-fosse-muted">Genre(s)</label>
+            <GenrePicker selected={genres} onChange={setGenres} />
+          </div>
+
+          {/* Avec qui */}
+          <div>
+            <label className="block text-sm font-medium mb-2 text-fosse-muted">
+              <Users className="w-3.5 h-3.5 inline mr-1" />Avec qui ?
+            </label>
+            <FriendsTagger selected={avecQui} onChange={setAvecQui} />
+          </div>
+
           {isVu && (
             <>
               <SectionTitle icon={MapPin} label="Où étais-tu ?" />
@@ -257,7 +273,6 @@ export default function ModifierConcertPage() {
                 ))}
               </div>
 
-              {/* Humeurs */}
               <SectionTitle icon={Star} label="Comment tu te sentais ?" />
               <div>
                 <label className="block text-sm font-medium mb-2 text-fosse-muted">Avant le concert</label>
@@ -294,7 +309,6 @@ export default function ModifierConcertPage() {
                 </div>
               </div>
 
-              {/* Note */}
               <SectionTitle icon={Star} label="Note" />
               <div className="flex items-center gap-4">
                 <input name="note" type="number" min="0" max="20" step="0.5"
@@ -307,13 +321,11 @@ export default function ModifierConcertPage() {
                 )}
               </div>
 
-              {/* Journal */}
               <SectionTitle icon={FileText} label="Journal — ta soirée en mots" />
               <textarea name="journal" value={form.journal} onChange={handleChange} rows={6}
-                placeholder={`Raconte ta soirée comme si tu l'écrivais pour ton futur toi...\n\nL'ambiance, les lumières, ce moment précis qui t'a traversé, les frissons, la foule...`}
+                placeholder="Raconte ta soirée comme si tu l'écrivais pour ton futur toi..."
                 className="input-field resize-none leading-relaxed" />
 
-              {/* Moments clés */}
               <SectionTitle icon={Star} label="Moments clés" />
               <p className="text-xs text-fosse-muted -mt-2">Ces petites anecdotes que tu ne veux pas oublier</p>
               <div className="space-y-2">
@@ -339,7 +351,6 @@ export default function ModifierConcertPage() {
                 )}
               </div>
 
-              {/* Setlist */}
               <SectionTitle icon={Music} label="Setlist" />
               <SetlistSearch
                 artist={form.artiste}
@@ -367,40 +378,27 @@ export default function ModifierConcertPage() {
             <button type="submit" disabled={loading}
               className="btn-primary flex-1 flex items-center justify-center gap-2 py-3">
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Mettre à jour
+              Enregistrer
             </button>
           </div>
 
-          {/* Suppression */}
-          <div className="pt-2 border-t border-fosse-border mt-4">
+          {/* Danger zone */}
+          <div className="border-t border-fosse-border pt-6 mt-6">
             {!confirmDelete ? (
-              <button
-                type="button"
-                onClick={() => setConfirmDelete(true)}
-                className="w-full py-2.5 rounded-xl text-sm text-red-400/60 hover:text-red-400 hover:bg-red-400/5 border border-transparent hover:border-red-400/20 transition-all"
-              >
-                Supprimer ce concert
+              <button type="button" onClick={() => setConfirmDelete(true)}
+                className="flex items-center gap-2 text-sm text-red-400/70 hover:text-red-400 transition-colors">
+                <Trash2 className="w-4 h-4" />Supprimer ce concert
               </button>
             ) : (
-              <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4 space-y-3">
-                <p className="text-sm text-red-400 text-center font-medium">Supprimer définitivement ce concert ?</p>
-                <p className="text-xs text-fosse-muted text-center">Cette action est irréversible.</p>
+              <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 space-y-3">
+                <p className="text-red-400 text-sm font-semibold">Cette action est irréversible. Tu es sûr ?</p>
                 <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setConfirmDelete(false)}
-                    className="flex-1 py-2 rounded-lg text-sm border border-fosse-border text-fosse-muted hover:text-fosse-text transition-colors"
-                  >
-                    Annuler
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleDelete}
-                    disabled={deleting}
-                    className="flex-1 py-2 rounded-lg text-sm font-semibold bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors flex items-center justify-center gap-2"
-                  >
-                    {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-                    Oui, supprimer
+                  <button type="button" onClick={() => setConfirmDelete(false)}
+                    className="btn-secondary flex-1 py-2 text-sm">Annuler</button>
+                  <button type="button" onClick={handleDelete} disabled={deleting}
+                    className="flex-1 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2">
+                    {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                    Supprimer
                   </button>
                 </div>
               </div>

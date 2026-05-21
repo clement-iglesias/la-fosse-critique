@@ -4,30 +4,35 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { GENRES_MUSICAUX, HUMEURS_AVANT, HUMEURS_APRES, PLACEMENTS } from '@/lib/types'
+import { HUMEURS_AVANT, HUMEURS_APRES, PLACEMENTS } from '@/lib/types'
 import { Save, ArrowLeft, Loader2, Music, Calendar, MapPin, Star, FileText, Clock, Users, Plus, X } from 'lucide-react'
 import SetlistSearch from '@/components/concerts/SetlistSearch'
+import DatePicker from '@/components/ui/DatePicker'
+import FriendsTagger from '@/components/concerts/FriendsTagger'
+import GenrePicker from '@/components/concerts/GenrePicker'
 
 export default function NouveauConcertPage() {
   const router = useRouter()
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [username, setUsername] = useState('')
   const [moments, setMoments] = useState<string[]>([''])
-
   const [setlistfmId, setSetlistfmId] = useState('')
+
+  // Separate state for multi-value fields
+  const [genres, setGenres] = useState<string[]>([])
+  const [avecQui, setAvecQui] = useState<string[]>([])
+
   const [form, setForm] = useState({
     artiste: '', date_concert: '', salle: '', ville: '', pays: 'France',
-    genre: '', note: '', commentaire: '', journal: '', setlist: '',
-    humeur_avant: '', humeur_apres: '', avec_qui: '', placement: '',
+    note: '', journal: '', setlist: '',
+    humeur_avant: '', humeur_apres: '', placement: '',
     statut: 'vu' as 'vu' | 'a_venir',
   })
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) supabase.from('profiles').select('username').eq('id', user.id).single()
-        .then(({ data }) => { if (data) setUsername(data.username) })
+      if (!user) router.push('/auth')
     })
   }, [])
 
@@ -67,12 +72,13 @@ export default function NouveauConcertPage() {
         salle: form.salle.trim() || null,
         ville: form.ville.trim() || null,
         pays: form.pays,
-        genre: form.genre || null,
+        genre: genres[0] || null,
+        genres: genres,
         note: noteNum,
         journal: form.journal.trim() || null,
         humeur_avant: form.humeur_avant || null,
         humeur_apres: form.humeur_apres || null,
-        avec_qui: form.avec_qui.trim() || null,
+        avec_qui: avecQui.length > 0 ? avecQui.join(', ') : null,
         placement: form.placement || null,
         moments_cles: momentsArr,
         setlist: setlistArr,
@@ -113,6 +119,7 @@ export default function NouveauConcertPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Statut */}
           <div className="flex gap-3">
             {[
               { value: 'vu', label: 'Concert vu', icon: Music },
@@ -130,35 +137,21 @@ export default function NouveauConcertPage() {
             ))}
           </div>
 
+          {/* Artiste */}
           <div>
             <label className="block text-sm font-medium mb-1.5 text-fosse-muted">Artiste / Groupe *</label>
             <input name="artiste" type="text" value={form.artiste} onChange={handleChange}
               placeholder="ex : Metallica" className="input-field" required />
           </div>
 
+          {/* Date + Lieu */}
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium mb-1.5 text-fosse-muted">Date *</label>
-              <input name="date_concert" type="date" value={form.date_concert} onChange={handleChange}
-                className="input-field" required />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1.5 text-fosse-muted">Genre</label>
-              <select name="genre" value={form.genre} onChange={handleChange} className="input-field">
-                <option value="">Sélectionner</option>
-                {GENRES_MUSICAUX.map(g => <option key={g} value={g}>{g}</option>)}
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium mb-1.5 text-fosse-muted">
-                <MapPin className="w-3.5 h-3.5 inline mr-1" />Salle
-              </label>
-              <input name="salle" type="text" value={form.salle} onChange={handleChange}
-                placeholder="Zénith de Paris" className="input-field" />
-            </div>
+            <DatePicker
+              label="Date *"
+              value={form.date_concert}
+              onChange={date => { setForm(prev => ({ ...prev, date_concert: date })); setError('') }}
+              required
+            />
             <div>
               <label className="block text-sm font-medium mb-1.5 text-fosse-muted">Ville</label>
               <input name="ville" type="text" value={form.ville} onChange={handleChange}
@@ -166,12 +159,27 @@ export default function NouveauConcertPage() {
             </div>
           </div>
 
+          {/* Salle */}
           <div>
             <label className="block text-sm font-medium mb-1.5 text-fosse-muted">
+              <MapPin className="w-3.5 h-3.5 inline mr-1" />Salle
+            </label>
+            <input name="salle" type="text" value={form.salle} onChange={handleChange}
+              placeholder="Zénith de Paris" className="input-field" />
+          </div>
+
+          {/* Genre */}
+          <div>
+            <label className="block text-sm font-medium mb-2 text-fosse-muted">Genre(s)</label>
+            <GenrePicker selected={genres} onChange={setGenres} />
+          </div>
+
+          {/* Avec qui */}
+          <div>
+            <label className="block text-sm font-medium mb-2 text-fosse-muted">
               <Users className="w-3.5 h-3.5 inline mr-1" />Avec qui ?
             </label>
-            <input name="avec_qui" type="text" value={form.avec_qui} onChange={handleChange}
-              placeholder="Sophie, Marc… ou solo !" className="input-field" />
+            <FriendsTagger selected={avecQui} onChange={setAvecQui} />
           </div>
 
           {isVu && (
@@ -281,7 +289,7 @@ export default function NouveauConcertPage() {
                 }}
               />
               <textarea name="setlist" value={form.setlist} onChange={handleChange} rows={5}
-                placeholder="Enter Sandman&#10;Nothing Else Matters&#10;Master of Puppets&#10;..."
+                placeholder={"Enter Sandman\nNothing Else Matters\nMaster of Puppets\n..."}
                 className="input-field resize-none font-mono text-sm mt-2" />
             </>
           )}
