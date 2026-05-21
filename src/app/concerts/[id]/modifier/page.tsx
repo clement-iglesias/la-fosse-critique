@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { HUMEURS_AVANT, HUMEURS_APRES, PLACEMENTS } from '@/lib/types'
 import { Save, ArrowLeft, Loader2, Music, MapPin, Star, FileText, Clock, Users, Plus, X, Trash2 } from 'lucide-react'
 import SetlistSearch from '@/components/concerts/SetlistSearch'
+import SetlistTopPicker from '@/components/concerts/SetlistTopPicker'
 import DatePicker from '@/components/ui/DatePicker'
 import FriendsTagger from '@/components/concerts/FriendsTagger'
 import GenrePicker from '@/components/concerts/GenrePicker'
@@ -24,6 +25,7 @@ export default function ModifierConcertPage() {
   const [error, setError] = useState('')
   const [moments, setMoments] = useState<string[]>([''])
   const [setlistfmId, setSetlistfmId] = useState('')
+  const [topMorceaux, setTopMorceaux] = useState<string[]>([])
 
   const [genres, setGenres] = useState<string[]>([])
   const [avecQui, setAvecQui] = useState<string[]>([])
@@ -78,6 +80,7 @@ export default function ModifierConcertPage() {
 
       setMoments(Array.isArray(data.moments_cles) && data.moments_cles.length > 0 ? data.moments_cles : [''])
       setSetlistfmId(data.setlistfm_id ?? '')
+      if (Array.isArray(data.top_morceaux)) setTopMorceaux(data.top_morceaux)
       setFetching(false)
     }
     fetchConcert()
@@ -130,6 +133,7 @@ export default function ModifierConcertPage() {
         setlist: setlistArr,
         statut: form.statut,
         setlistfm_id: setlistfmId || undefined,
+        top_morceaux: topMorceaux,
         updated_at: new Date().toISOString(),
       }).eq('id', id).eq('user_id', user.id)
 
@@ -364,6 +368,15 @@ export default function ModifierConcertPage() {
               <textarea name="setlist" value={form.setlist} onChange={handleChange} rows={5}
                 placeholder={"Enter Sandman\nNothing Else Matters\nMaster of Puppets\n..."}
                 className="input-field resize-none font-mono text-sm mt-2" />
+              {form.setlist.trim() && (
+                <div className="mt-3">
+                  <SetlistTopPicker
+                    songs={form.setlist.split('\n').map(s => s.trim()).filter(Boolean)}
+                    topMorceaux={topMorceaux}
+                    onChange={setTopMorceaux}
+                  />
+                </div>
+              )}
             </>
           )}
 

@@ -41,6 +41,7 @@ export interface Concert {
   // Médias
   photos: string[]
   setlist: string[]
+  top_morceaux: string[]
   // Notation
   note: number | null
   statut: StatutConcert
@@ -239,4 +240,6 @@ export const GENRE_COLORS: Record<string, { bg: string; text: string; border: st
   'Rock':              { bg: '#ef444415', text: '#f87171', border: '#ef444425' },
   'Indie':             { bg: '#22c55e15', text: '#4ade80', border: '#22c55e25' },
   'default':           { bg: '#ffffff08', text: '#666',    border: '#2a2a2a' },
+}
+   border: '#2a2a2a' },
 }

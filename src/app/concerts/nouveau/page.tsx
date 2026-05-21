@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { HUMEURS_AVANT, HUMEURS_APRES, PLACEMENTS } from '@/lib/types'
-import { Save, ArrowLeft, Loader2, Music, Calendar, MapPin, Star, FileText, Clock, Users, Plus, X } from 'lucide-react'
+import { Save, ArrowLeft, Loader2, Music, MapPin, Star, FileText, Clock, Users, Plus, X } from 'lucide-react'
 import SetlistSearch from '@/components/concerts/SetlistSearch'
+import SetlistTopPicker from '@/components/concerts/SetlistTopPicker'
 import DatePicker from '@/components/ui/DatePicker'
 import FriendsTagger from '@/components/concerts/FriendsTagger'
 import GenrePicker from '@/components/concerts/GenrePicker'
@@ -18,8 +19,7 @@ export default function NouveauConcertPage() {
   const [error, setError] = useState('')
   const [moments, setMoments] = useState<string[]>([''])
   const [setlistfmId, setSetlistfmId] = useState('')
-
-  // Separate state for multi-value fields
+  const [topMorceaux, setTopMorceaux] = useState<string[]>([])
   const [genres, setGenres] = useState<string[]>([])
   const [avecQui, setAvecQui] = useState<string[]>([])
 
@@ -45,6 +45,49 @@ export default function NouveauConcertPage() {
   const updateMoment = (i: number, v: string) => setMoments(prev => prev.map((m, idx) => idx === i ? v : m))
   const removeMoment = (i: number) => setMoments(prev => prev.filter((_, idx) => idx !== i))
 
+  // Send notifications to tagged @friends
+  const sendTagNotifications = async (
+    concertId: string,
+    fromUser: { id: string; username: string; full_name: string | null },
+    tags: string[],
+    concertData: { artiste: string; date_concert: string; ville: string; salle: string }
+  ) => {
+    const usernames = tags
+      .filter(t => t.startsWith('@'))
+      .map(t => t.slice(1))
+    if (usernames.length === 0) return
+
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, username')
+      .in('username', usernames)
+
+    if (!profiles || profiles.length === 0) return
+
+    const notifs = profiles
+      .filter((p: { id: string }) => p.id !== fromUser.id)
+      .map((p: { id: string; username: string }) => ({
+        user_id: p.id,
+        from_user_id: fromUser.id,
+        type: 'concert_tag',
+        data: {
+          from_username: fromUser.username,
+          from_full_name: fromUser.full_name,
+          concert_id: concertId,
+          artiste: concertData.artiste,
+          date_concert: concertData.date_concert,
+          ville: concertData.ville,
+          salle: concertData.salle,
+        },
+        lu: false,
+        actioned: false,
+      }))
+
+    if (notifs.length > 0) {
+      await supabase.from('notifications').insert(notifs)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -62,10 +105,13 @@ export default function NouveauConcertPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/auth'); return }
 
+      const { data: profile } = await supabase
+        .from('profiles').select('username, full_name').eq('id', user.id).single()
+
       const setlistArr = form.setlist ? form.setlist.split('\n').map(s => s.trim()).filter(Boolean) : []
       const momentsArr = moments.map(m => m.trim()).filter(Boolean)
 
-      const { error: insertError } = await supabase.from('concerts').insert({
+      const { data: inserted, error: insertError } = await supabase.from('concerts').insert({
         user_id: user.id,
         artiste: form.artiste.trim(),
         date_concert: form.date_concert,
@@ -84,9 +130,26 @@ export default function NouveauConcertPage() {
         setlist: setlistArr,
         statut: form.statut,
         setlistfm_id: setlistfmId || null,
-      })
+        top_morceaux: topMorceaux,
+      }).select('id').single()
 
       if (insertError) throw insertError
+
+      // Send tag notifications (fire and forget)
+      if (inserted && profile && avecQui.length > 0) {
+        sendTagNotifications(
+          inserted.id,
+          { id: user.id, username: profile.username, full_name: profile.full_name },
+          avecQui,
+          {
+            artiste: form.artiste.trim(),
+            date_concert: form.date_concert,
+            ville: form.ville.trim(),
+            salle: form.salle.trim(),
+          }
+        )
+      }
+
       router.push('/dashboard')
       router.refresh()
     } catch (err: unknown) {
@@ -119,7 +182,6 @@ export default function NouveauConcertPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Statut */}
           <div className="flex gap-3">
             {[
               { value: 'vu', label: 'Concert vu', icon: Music },
@@ -137,14 +199,12 @@ export default function NouveauConcertPage() {
             ))}
           </div>
 
-          {/* Artiste */}
           <div>
             <label className="block text-sm font-medium mb-1.5 text-fosse-muted">Artiste / Groupe *</label>
             <input name="artiste" type="text" value={form.artiste} onChange={handleChange}
               placeholder="ex : Metallica" className="input-field" required />
           </div>
 
-          {/* Date + Lieu */}
           <div className="grid grid-cols-2 gap-3">
             <DatePicker
               label="Date *"
@@ -159,7 +219,6 @@ export default function NouveauConcertPage() {
             </div>
           </div>
 
-          {/* Salle */}
           <div>
             <label className="block text-sm font-medium mb-1.5 text-fosse-muted">
               <MapPin className="w-3.5 h-3.5 inline mr-1" />Salle
@@ -168,13 +227,11 @@ export default function NouveauConcertPage() {
               placeholder="Zénith de Paris" className="input-field" />
           </div>
 
-          {/* Genre */}
           <div>
             <label className="block text-sm font-medium mb-2 text-fosse-muted">Genre(s)</label>
             <GenrePicker selected={genres} onChange={setGenres} />
           </div>
 
-          {/* Avec qui */}
           <div>
             <label className="block text-sm font-medium mb-2 text-fosse-muted">
               <Users className="w-3.5 h-3.5 inline mr-1" />Avec qui ?
@@ -291,6 +348,15 @@ export default function NouveauConcertPage() {
               <textarea name="setlist" value={form.setlist} onChange={handleChange} rows={5}
                 placeholder={"Enter Sandman\nNothing Else Matters\nMaster of Puppets\n..."}
                 className="input-field resize-none font-mono text-sm mt-2" />
+              {form.setlist.trim() && (
+                <div className="mt-3">
+                  <SetlistTopPicker
+                    songs={form.setlist.split('\n').map(s => s.trim()).filter(Boolean)}
+                    topMorceaux={topMorceaux}
+                    onChange={setTopMorceaux}
+                  />
+                </div>
+              )}
             </>
           )}
 

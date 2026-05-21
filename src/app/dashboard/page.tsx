@@ -13,6 +13,12 @@ export default async function DashboardPage() {
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
   if (!profile) redirect('/auth')
 
+  const { count: unreadCount } = await supabase
+    .from('notifications')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .eq('lu', false)
+
   const { data: concerts } = await supabase
     .from('concerts')
     .select('*, reactions(id, user_id)')
@@ -56,8 +62,11 @@ export default async function DashboardPage() {
             </div>
           </div>
           <div className="flex items-center gap-1">
-            <Link href="/profil" className="text-fosse-muted hover:text-fosse-text p-2 rounded-xl hover:bg-fosse-card transition-colors">
+            <Link href="/notifications" className="relative text-fosse-muted hover:text-fosse-text p-2 rounded-xl hover:bg-fosse-card transition-colors">
               <Bell className="w-5 h-5" />
+              {unreadCount && unreadCount > 0 ? (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-fosse-orange rounded-full" />
+              ) : null}
             </Link>
             <Link href={`/profil/${profile.username}`}
               className="w-8 h-8 rounded-full bg-fosse-card border border-fosse-border flex items-center justify-center text-xs font-black text-fosse-orange hover:border-fosse-orange transition-colors">

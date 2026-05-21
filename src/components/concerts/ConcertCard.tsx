@@ -172,6 +172,24 @@ export default function ConcertCard({ concert, userId, onDelete }: ConcertCardPr
 
           {concert.setlist?.length > 0 && (
             <div className="mb-3">
+              {/* Top 3 always visible if defined */}
+              {concert.top_morceaux?.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {concert.top_morceaux.map((s, i) => {
+                    const medals = ['🥇', '🥈', '🥉']
+                    const colors = [
+                      'border-yellow-400/40 bg-yellow-400/8 text-yellow-300',
+                      'border-slate-400/40 bg-slate-400/8 text-slate-300',
+                      'border-amber-600/40 bg-amber-600/8 text-amber-400',
+                    ]
+                    return (
+                      <span key={i} className={`flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border ${colors[i]}`}>
+                        {medals[i]} {s}
+                      </span>
+                    )
+                  })}
+                </div>
+              )}
               <button
                 onClick={() => setShowSetlist(!showSetlist)}
                 className="flex items-center gap-1.5 text-[10px] text-fosse-border hover:text-fosse-muted transition-colors"
@@ -182,12 +200,18 @@ export default function ConcertCard({ concert, userId, onDelete }: ConcertCardPr
               </button>
               {showSetlist && (
                 <ol className="mt-2 space-y-1 pl-1">
-                  {concert.setlist.map((titre, i) => (
-                    <li key={i} className="flex items-baseline gap-2 text-xs text-fosse-muted">
-                      <span className="text-fosse-border tabular-nums w-5 shrink-0 text-right">{i + 1}.</span>
-                      <span>{titre}</span>
-                    </li>
-                  ))}
+                  {concert.setlist.map((titre, i) => {
+                    const topRank = concert.top_morceaux?.indexOf(titre) ?? -1
+                    const medals = ['🥇', '🥈', '🥉']
+                    return (
+                      <li key={i} className={`flex items-baseline gap-2 text-xs ${topRank !== -1 ? 'text-white font-semibold' : 'text-fosse-muted'}`}>
+                        <span className="tabular-nums w-5 shrink-0 text-right">
+                          {topRank !== -1 ? medals[topRank] : <span className="text-fosse-border">{i + 1}.</span>}
+                        </span>
+                        <span>{titre}</span>
+                      </li>
+                    )
+                  })}
                 </ol>
               )}
             </div>
